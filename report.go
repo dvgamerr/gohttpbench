@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"time"
 )
@@ -20,6 +22,7 @@ func PrintHeader() {
 func PrintReport(context *Context, stats *Stats) {
 
 	var buffer bytes.Buffer
+	var notify bytes.Buffer
 
 	config := context.config
 	responseTimeData := stats.responseTimeData
@@ -31,6 +34,8 @@ func PrintReport(context *Context, stats *Stats) {
 	URL, _ := url.Parse(config.url)
 
 	fmt.Fprint(&buffer, "\n\n")
+	fmt.Fprintf(&notify, "[%s] ", time.Now().Format("15:04:05.000Z"))
+	fmt.Fprintf(&notify, "%s → ", URL.RequestURI())
 	// fmt.Fprintf(&buffer, "Server Software:        %s\n", context.GetString(FieldServerName))
 	fmt.Fprintf(&buffer, "Server:        %s:%d\n", config.host, config.port)
 	fmt.Fprintf(&buffer, "Path:          %s\n", URL.RequestURI())
@@ -58,9 +63,14 @@ func PrintReport(context *Context, stats *Stats) {
 		minResponseTime := responseTimeData[0] / 1000000
 		maxResponseTime := responseTimeData[len(responseTimeData)-1] / 1000000
 
-		fmt.Fprintf(&buffer, "Requests per second:    %.2f [#/sec] (mean)\n", float64(totalRequests)/totalExecutionTime.Seconds())
-		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean)\n", float64(config.concurrency)*float64(totalExecutionTime.Nanoseconds())/1000000/float64(totalRequests))
-		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean, across all concurrent requests)\n", float64(totalExecutionTime.Nanoseconds())/1000000/float64(totalRequests))
+		reqPerSec := float64(totalRequests) / totalExecutionTime.Seconds()
+		reqMax := float64(totalExecutionTime.Nanoseconds()) / 1000000 / float64(totalRequests)
+		reqMin := float64(config.concurrency) * reqMax
+		fmt.Fprintf(&notify, "`%.2f req/sec (%.3f ~ %.3f [ms])`\n", reqPerSec, reqMin, reqMax)
+
+		fmt.Fprintf(&buffer, "Requests per second:    %.2f [#/sec] (mean)\n", reqPerSec)
+		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean)\n", reqMin)
+		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean, across all concurrent requests)\n", reqMax)
 		fmt.Fprintf(&buffer, "HTML Transfer rate:     %.2f [Kbytes/sec] received\n\n", float64(totalReceived/1024)/totalExecutionTime.Seconds())
 
 		fmt.Fprint(&buffer, "Connection Times (ms)\n")
@@ -81,7 +91,21 @@ func PrintReport(context *Context, stats *Stats) {
 		}
 		fmt.Fprintf(&buffer, " %d%%\t %d (longest request)\n", 100, maxResponseTime)
 	}
+
+	fmt.Fprintf(&notify, "estimated : %.2f seconds [ *%d* Connections / *%d (%d)* Transections]", totalExecutionTime.Seconds(), config.concurrency, totalRequests, totalFailedReqeusts)
+	// "[06:49:03] /product/reserve → `13.69 req/sec (73.043 ~ 730.432 [ms])`\n"
+	// "estimated : 7.30 seconds [ *10* Connections / *100* Transections]"
+
 	fmt.Println(buffer.String())
+
+	if os.Getenv("NOTIFY") != "" {
+		req, _ := http.NewRequest("POST", os.Getenv("NOTIFY"), &notify)
+		client := &http.Client{}
+		client.Do(req)
+	} else {
+		fmt.Println("")
+		fmt.Println(notify.String())
+	}
 }
 
 type durationSlice []time.Duration
