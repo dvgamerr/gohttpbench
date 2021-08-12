@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -34,7 +35,7 @@ func PrintReport(context *Context, stats *Stats) {
 	URL, _ := url.Parse(config.url)
 
 	fmt.Fprint(&buffer, "\n\n")
-	fmt.Fprintf(&notify, "[%s] ", time.Now().Format("15:04:05.000Z"))
+	fmt.Fprintf(&notify, "[%s] ", time.Now().Format("15:04:05.000"))
 	fmt.Fprintf(&notify, "%s → ", URL.RequestURI())
 	// fmt.Fprintf(&buffer, "Server Software:        %s\n", context.GetString(FieldServerName))
 	fmt.Fprintf(&buffer, "Server:        %s:%d\n", config.host, config.port)
@@ -66,7 +67,7 @@ func PrintReport(context *Context, stats *Stats) {
 		reqPerSec := float64(totalRequests) / totalExecutionTime.Seconds()
 		reqMax := float64(totalExecutionTime.Nanoseconds()) / 1000000 / float64(totalRequests)
 		reqMin := float64(config.concurrency) * reqMax
-		fmt.Fprintf(&notify, "`%.2f req/sec (%.3f ~ %.3f [ms])`\n", reqPerSec, reqMin, reqMax)
+		fmt.Fprintf(&notify, "`%.2f req/sec (%.3f ~ %.3f [ms])`\\n", reqPerSec, reqMin, reqMax)
 
 		fmt.Fprintf(&buffer, "Requests per second:    %.2f [#/sec] (mean)\n", reqPerSec)
 		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean)\n", reqMin)
@@ -93,15 +94,32 @@ func PrintReport(context *Context, stats *Stats) {
 	}
 
 	fmt.Fprintf(&notify, "estimated : %.2f seconds [ *%d* Connections / *%d (%d)* Transections]", totalExecutionTime.Seconds(), config.concurrency, totalRequests, totalFailedReqeusts)
-	// "[06:49:03] /product/reserve → `13.69 req/sec (73.043 ~ 730.432 [ms])`\n"
-	// "estimated : 7.30 seconds [ *10* Connections / *100* Transections]"
 
-	fmt.Println(buffer.String())
+	// fmt.Println(buffer.String())
 
 	if os.Getenv("NOTIFY") != "" {
-		req, _ := http.NewRequest("POST", os.Getenv("NOTIFY"), &notify)
+		var body bytes.Buffer
+		fmt.Fprintf(&body, "{\"message\":\"%s\"}", notify.String())
+		req, err := http.NewRequest("PUT", os.Getenv("NOTIFY"), &body)
+		req.Header.Add("Content-Type", "application/json")
+		if err != nil {
+			fmt.Println("request:", err)
+		}
 		client := &http.Client{}
-		client.Do(req)
+		res, err := client.Do(req)
+		defer res.Body.Close()
+
+		if err != nil {
+			fmt.Println("client:", err)
+		}
+
+		raw, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println("Body:", err)
+		}
+
+		fmt.Println(string(raw))
+
 	} else {
 		fmt.Println("")
 		fmt.Println(notify.String())

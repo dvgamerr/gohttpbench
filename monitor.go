@@ -51,8 +51,9 @@ func (m *Monitor) Run() {
 
 	// waiting for all of http workers to start
 	m.c.start.Wait()
-
-	fmt.Printf("Benchmarking %s (be patient)\n", m.c.config.host)
+	if os.Getenv("NOTIFY") == "" {
+		fmt.Printf("Benchmarking %s (be patient)\n", m.c.config.host)
+	}
 	sw := &StopWatch{}
 	sw.Start()
 
@@ -67,11 +68,11 @@ loop:
 				break loop
 			}
 
-			if stats.totalRequests >= 10 && stats.totalRequests%(m.c.config.requests/10) == 0 {
+			if os.Getenv("NOTIFY") == "" && stats.totalRequests >= 10 && stats.totalRequests%(m.c.config.requests/10) == 0 {
 				fmt.Printf("Completed %d requests\n", stats.totalRequests)
 			}
 
-			if stats.totalRequests == m.c.config.requests {
+			if os.Getenv("NOTIFY") == "" && stats.totalRequests == m.c.config.requests {
 				fmt.Printf("Finished %d requests\n", stats.totalRequests)
 				break loop
 			}
