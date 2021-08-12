@@ -65,13 +65,13 @@ func PrintReport(context *Context, stats *Stats) {
 		maxResponseTime := responseTimeData[len(responseTimeData)-1] / 1000000
 
 		reqPerSec := float64(totalRequests) / totalExecutionTime.Seconds()
-		reqMax := float64(totalExecutionTime.Nanoseconds()) / 1000000 / float64(totalRequests)
-		reqMin := float64(config.concurrency) * reqMax
+		reqMin := float64(totalExecutionTime.Nanoseconds()) / 1000000 / float64(totalRequests)
+		reqMax := float64(config.concurrency) * reqMin
 		fmt.Fprintf(&notify, "`%.2f req/sec (%.3f ~ %.3f [ms])`\\n", reqPerSec, reqMin, reqMax)
 
 		fmt.Fprintf(&buffer, "Requests per second:    %.2f [#/sec] (mean)\n", reqPerSec)
-		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean)\n", reqMin)
-		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean, across all concurrent requests)\n", reqMax)
+		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean)\n", reqMax)
+		fmt.Fprintf(&buffer, "Time per request:       %.3f [ms] (mean, across all concurrent requests)\n", reqMin)
 		fmt.Fprintf(&buffer, "HTML Transfer rate:     %.2f [Kbytes/sec] received\n\n", float64(totalReceived/1024)/totalExecutionTime.Seconds())
 
 		fmt.Fprint(&buffer, "Connection Times (ms)\n")
