@@ -10,11 +10,11 @@ import (
 )
 
 func PrintHeader() {
-	fmt.Println(`
-This is GoHttpBench, Version ` + GBVersion + `, https://github.com/parkghost/gohttpbench
-Author: Brandon Chen, Email: parkghost@gmail.com
-Licensed under the MIT license
-`)
+	// 	fmt.Println(`
+	// This is GoHttpBench, Version ` + GBVersion + `, https://github.com/parkghost/gohttpbench
+	// Author: Brandon Chen, Email: parkghost@gmail.com
+	// Licensed under the MIT license
+	// `)
 }
 
 func PrintReport(context *Context, stats *Stats) {
@@ -31,13 +31,10 @@ func PrintReport(context *Context, stats *Stats) {
 	URL, _ := url.Parse(config.url)
 
 	fmt.Fprint(&buffer, "\n\n")
-	fmt.Fprintf(&buffer, "Server Software:        %s\n", context.GetString(FieldServerName))
-	fmt.Fprintf(&buffer, "Server Hostname:        %s\n", config.host)
-	fmt.Fprintf(&buffer, "Server Port:            %d\n\n", config.port)
-
-	fmt.Fprintf(&buffer, "Document Path:          %s\n", URL.RequestURI())
-	fmt.Fprintf(&buffer, "Document Length:        %d bytes\n\n", context.GetInt(FieldContentSize))
-
+	// fmt.Fprintf(&buffer, "Server Software:        %s\n", context.GetString(FieldServerName))
+	fmt.Fprintf(&buffer, "Server:        %s:%d\n", config.host, config.port)
+	fmt.Fprintf(&buffer, "Path:          %s\n", URL.RequestURI())
+	fmt.Fprintf(&buffer, "Length:        %d bytes\n\n", context.GetInt(FieldContentSize))
 	fmt.Fprintf(&buffer, "Concurrency Level:      %d\n", config.concurrency)
 	fmt.Fprintf(&buffer, "Time taken for tests:   %.2f seconds\n", totalExecutionTime.Seconds())
 	fmt.Fprintf(&buffer, "Complete requests:      %d\n", totalRequests)

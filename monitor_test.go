@@ -63,12 +63,12 @@ func TestMonitorWithFailedResponse(t *testing.T) {
 	dummy := errors.New("dummy error")
 
 	records := []*Record{
-		&Record{Error: &LengthError{dummy}},
-		&Record{Error: &ConnectError{dummy}},
-		&Record{Error: &ReceiveError{dummy}},
-		&Record{Error: &ExceptionError{dummy}},
-		&Record{Error: &ResponseError{dummy}},
-		&Record{Error: &ResponseTimeoutError{dummy}},
+		{Error: &LengthError{dummy}},
+		{Error: &ConnectError{dummy}},
+		{Error: &ReceiveError{dummy}},
+		{Error: &ExceptionError{dummy}},
+		{Error: &ResponseError{dummy}},
+		{Error: &ResponseTimeoutError{dummy}},
 	}
 
 	expectedStat := &Stats{

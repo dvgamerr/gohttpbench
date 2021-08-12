@@ -13,9 +13,9 @@ func TestExtractHostAndPort(t *testing.T) {
 	}
 
 	testData := map[string]Pair{
-		"http://localhost:8080/":  Pair{"localhost", 8080},
-		"https://www.google.com/": Pair{"www.google.com", 443},
-		"http://localhost/":       Pair{"localhost", 80},
+		"http://localhost:8080/":  {"localhost", 8080},
+		"https://www.google.com/": {"www.google.com", 443},
+		"http://localhost/":       {"localhost", 80},
 	}
 
 	for testingData, expectedData := range testData {
